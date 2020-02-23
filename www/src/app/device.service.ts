@@ -16,7 +16,7 @@ export class DeviceService {
     return this.http.get<Device[]>(environment.apiUrl+"/device");
   }
   getStats(key:string, deviceMac:string, from:number,to:number):Observable<any[]>{
-    let url = environment.apiUrl+"device/"+deviceMac+"/stats/"+key;
+    let url = environment.apiUrl+"/device/"+deviceMac+"/stats/"+key;
     let queries = []
     if(from){
       queries.push("from="+from); 
