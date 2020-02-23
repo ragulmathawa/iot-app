@@ -3,11 +3,11 @@ const app = express()
 const serveStatic = require('express-static-gzip');
 const history = require('connect-history-api-fallback');
 const MongoClient =  require("mongodb").MongoClient;
+const cors = require('cors');
 const port = parseInt(process.env.PORT) || 8080;
 const dbName = process.env.DB_NAME || "iotdb";
 const dbHost = process.env.DB_HOST || "localhost"
 const apiRouter = require("./src/api");
-
 
 async function main(){
   var db;
@@ -20,6 +20,11 @@ async function main(){
   }catch(err){
     console.error("DB connection Error",err);
   }  
+  let corsOptions = {
+    origin:"*"
+  }
+  app.use(cors(corsOptions))
+
   app.use('/api',apiRouter(db));
   app.use(history());
   app.use(

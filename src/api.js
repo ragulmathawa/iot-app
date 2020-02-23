@@ -3,6 +3,8 @@ const express = require('express')
 const morgan = require('morgan')
 const bodyParser = require('body-parser');
 const Db = require("mongodb").Db;
+const moment = require("moment");
+const utils = require("./utils");
 /**
  * Device Schema
  * {
@@ -41,8 +43,26 @@ function routes(db) {
     router.get("/device/:deviceMac/stats/:key", async (req, res) => {
         let mac = req.params['deviceMac'];
         let key = req.params['key'];
-        let stats = await db.collection("hourlystats").find({ "device": mac, "key": key }).toArray();
-        return res.json(stats);
+        let from = parseInt(req.query['from']) || moment().subtract(1,'hour').toDate().getTime();
+        let to = parseInt(req.query['to']) || Date.now();
+        if(from>to){
+            return res.status(400).json({
+                error:"from value cannot be later than to"
+            })
+        }
+        
+        let from_hour = new Date(from).setMinutes(0,0,0);
+        let to_hour = new Date(to).setMinutes(0,0,0);
+        let stats = await db.collection("hourlystats")
+                        .find({ 
+                            "device": mac, 
+                            "key": key, 
+                            $and:[
+                                { "timestamp_hour": {$gte:from_hour}},
+                                { "timestamp_hour": {$lte:to_hour}}
+                            ] 
+                        }).toArray();
+        return res.json(utils.flattenStats(stats,from,to));
     });
     router.post("/device/:deviceMac/stats", async (req, res) => {
         let mac = req.params['deviceMac'];
@@ -85,6 +105,15 @@ function routes(db) {
             })
         }
         await db.collection("devices").updateOne({ mac: mac }, { $set: { name: name } }, { upsert: true });
+        return res.status(204).json();
+    })
+
+    router.put("/device/:deviceMac", async (req, res) => {
+        let mac = req.params["deviceMac"];
+        if(req.body && req.body.mac){
+            delete req.body.mac;
+        }
+        await db.collection("devices").findOneAndUpdate({mac:mac}, {$set:req.body});
         return res.status(204).json();
     })
     router.get("/device/stats", (req, res) => {
