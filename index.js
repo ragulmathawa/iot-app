@@ -2,15 +2,33 @@ const express = require('express')
 const app = express()
 const serveStatic = require('express-static-gzip');
 const history = require('connect-history-api-fallback');
-const port = process.env.PORT || 8080
-
-app.use(history());
-app.use(
-  serveStatic(__dirname + '/dist/', {
-    enableBrotli: true,
-    orderPreference: ['br', 'gz']
-  })
-);
+const MongoClient =  require("mongodb").MongoClient;
+const port = parseInt(process.env.PORT) || 8080;
+const dbName = process.env.DB_NAME || "iotdb";
+const dbHost = process.env.DB_HOST || "localhost"
+const apiRouter = require("./src/api");
 
 
-app.listen(port, () => console.log(`IOT app listening on port ${port}!`))
+async function main(){
+  var db;
+  try{
+    let url =`mongodb://${dbHost}/${dbName}`;
+    const client = new MongoClient(url, { useUnifiedTopology: true });
+    await client.connect()
+    db = client.db(dbName);
+    console.log(`DB "${dbHost}/${dbName}" Connected `)
+  }catch(err){
+    console.error("DB connection Error",err);
+  }  
+  app.use('/api',apiRouter(db));
+  app.use(history());
+  app.use(
+    serveStatic(__dirname + '/dist/', {
+      enableBrotli: true,
+      orderPreference: ['br', 'gz']
+    })
+  );
+
+  app.listen(port, async () =>{ console.log(`IOT app listening on port ${port}!`);})
+}
+main()
