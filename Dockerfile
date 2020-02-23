@@ -23,9 +23,9 @@ FROM node:13.8-alpine3.11
 WORKDIR /usr/src/app
 COPY --from=builder /usr/src/app/dist/iotweb /usr/src/app/dist
 COPY package*.json ./
-
 RUN npm install
 
 COPY index.js .
+COPY src ./src
 
 CMD ["node", "index.js"]
