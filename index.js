@@ -6,12 +6,12 @@ const serveStatic = require('express-static-gzip');
 const history = require('connect-history-api-fallback');
 const MongoClient = require("mongodb").MongoClient;
 const cors = require('cors');
-const port = parseInt(process.env.PORT) || 8080;
+const port = parseInt(process.env.PORT) || 3000;
 const dbName = process.env.DB_NAME || "iotdb";
 const dbHost = process.env.DB_HOST || "localhost"
 const sslPort = parseInt(process.env.SSL_PORT) || 8082
-const sslKey = process.env.SSL_KEY;
-const sslCert = process.env.SSL_CERT;
+const sslKey = process.env.SSL_KEY || "./key.pem";
+const sslCert = process.env.SSL_CERT || "./cert.pem";
 const apiRouter = require("./src/api");
 
 async function main() {
@@ -27,18 +27,20 @@ async function main() {
   }
 
   const secureApp = express();
-  initApp(app,db);
-  initApp(secureApp,db);
+  initApp(app, db);
+  initApp(secureApp, db);
   app.listen(port, async () => { console.log(`IOT app listening on port ${port}!`); })
   if (sslPort && sslCert && sslKey) {
     https.createServer({
       key: fs.readFileSync(sslKey),
       cert: fs.readFileSync(sslCert),
-    }).listen(sslPort, app);
+    }, secureApp).listen(sslPort, () => {
+      console.log("IOT app listening on Secure port " + sslPort);
+    })
   }
 }
 
-function initApp(app,db){
+function initApp(app, db) {
   let corsOptions = {
     origin: "*"
   }
