@@ -1,4 +1,4 @@
-RANDOM=$$
+RANDOM=$(od -An -N2 -i /dev/random)
 DIFF=$((0-100+1))
 MAC=${1:-123456789012}    
 REST=http://localhost:8080

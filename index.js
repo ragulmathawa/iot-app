@@ -25,11 +25,24 @@ async function main() {
   } catch (err) {
     console.error("DB connection Error", err);
   }
+
+  const secureApp = express();
+  initApp(app,db);
+  initApp(secureApp,db);
+  app.listen(port, async () => { console.log(`IOT app listening on port ${port}!`); })
+  if (sslPort && sslCert && sslKey) {
+    https.createServer({
+      key: fs.readFileSync(sslKey),
+      cert: fs.readFileSync(sslCert),
+    }).listen(sslPort, app);
+  }
+}
+
+function initApp(app,db){
   let corsOptions = {
     origin: "*"
   }
   app.use(cors(corsOptions))
-
   app.use('/api', apiRouter(db));
   app.use(history());
   app.use(
@@ -38,13 +51,5 @@ async function main() {
       orderPreference: ['br', 'gz']
     })
   );
-
-  app.listen(port, async () => { console.log(`IOT app listening on port ${port}!`); })
-  if (sslPort && sslCert && sslKey) {
-    https.createServer({
-      key: fs.readFileSync(sslKey),
-      cert: fs.readFileSync(sslCert),
-    }).listen(sslPort, app);
-  }
 }
 main()
